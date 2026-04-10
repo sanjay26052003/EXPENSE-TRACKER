@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+client/.next/
+client/out/
+server/.next/
+
+# Next.js
+.next/
+client/.next/
+client/out/
+server/.next/
+
+# Environment variables
+.env
+.env.local
+.env*.local
+server/.env
+client/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Misc
+.vercel
