@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const dbConnect = require('../config/db');
 const { Expense } = require('../models/Expense');
 
 // GET /api/expenses - Get all expenses (optional ?month=YYYY-MM)
 router.get('/', async (req, res) => {
   try {
+    await dbConnect();
     const { month } = req.query;
     let dateFilter = {};
 
@@ -25,6 +27,7 @@ router.get('/', async (req, res) => {
 // POST /api/expenses - Create expense
 router.post('/', async (req, res) => {
   try {
+    await dbConnect();
     const { amount, category, description, date } = req.body;
 
     if (!amount || !category) {
@@ -41,6 +44,7 @@ router.post('/', async (req, res) => {
 // GET /api/expenses/grouped - Get all grouped by date
 router.get('/grouped', async (req, res) => {
   try {
+    await dbConnect();
     const { month } = req.query;
     let dateFilter = {};
 
@@ -71,6 +75,7 @@ router.get('/grouped', async (req, res) => {
 // GET /api/expenses/summary - Get category totals
 router.get('/summary', async (req, res) => {
   try {
+    await dbConnect();
     const { month } = req.query;
     let dateFilter = {};
 
@@ -98,6 +103,7 @@ router.get('/summary', async (req, res) => {
 // GET /api/expenses/:id - Get single expense
 router.get('/:id', async (req, res) => {
   try {
+    await dbConnect();
     const expense = await Expense.findById(req.params.id);
     if (!expense) {
       return res.status(404).json({ success: false, error: 'Expense not found' });
@@ -111,6 +117,7 @@ router.get('/:id', async (req, res) => {
 // PUT /api/expenses/:id - Update expense
 router.put('/:id', async (req, res) => {
   try {
+    await dbConnect();
     const { amount, category, description, date } = req.body;
     const expense = await Expense.findByIdAndUpdate(
       req.params.id,
@@ -129,6 +136,7 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/expenses/:id - Delete expense
 router.delete('/:id', async (req, res) => {
   try {
+    await dbConnect();
     const expense = await Expense.findByIdAndDelete(req.params.id);
     if (!expense) {
       return res.status(404).json({ success: false, error: 'Expense not found' });
