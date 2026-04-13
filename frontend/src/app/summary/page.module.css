@@ -14,9 +14,10 @@
 }
 
 .pageTitle {
-  font-size: 1.75rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: var(--text);
+  letter-spacing: -0.02em;
 }
 
 .loading {

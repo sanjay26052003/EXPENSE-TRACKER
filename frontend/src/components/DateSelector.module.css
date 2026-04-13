@@ -4,16 +4,18 @@
 }
 
 .select {
-  padding: 0.4rem 0.75rem;
+  padding: 0.45rem 0.75rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--card-bg);
+  border-radius: 10px;
+  background: var(--input-bg);
   color: var(--text);
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   cursor: pointer;
+  transition: border-color 0.2s;
 }
 
 .select:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: #cdbcec;
+  box-shadow: 0 0 0 4px rgba(124, 92, 230, 0.07);
 }

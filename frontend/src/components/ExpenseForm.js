@@ -50,9 +50,10 @@ export default function ExpenseForm({ onSubmit, initialData = null, submitLabel 
 
       {error && <div className={styles.error}>{error}</div>}
 
-      <div className={styles.row}>
-        <div className={styles.field}>
-          <label>Amount (₹)</label>
+      <div className={styles.field}>
+        <label>Amount</label>
+        <div className={styles.amountWrapper}>
+          <span className={styles.rupee}>Rs</span>
           <input
             type="number"
             step="0.01"
@@ -64,19 +65,19 @@ export default function ExpenseForm({ onSubmit, initialData = null, submitLabel 
             required
           />
         </div>
+      </div>
 
-        <div className={styles.field}>
-          <label>Category</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className={styles.select}
-          >
-            {EXPENSE_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
+      <div className={styles.field}>
+        <label>Category</label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className={styles.select}
+        >
+          {EXPENSE_CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
       </div>
 
       <div className={styles.field}>

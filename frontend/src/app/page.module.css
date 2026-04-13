@@ -1,67 +1,120 @@
 .container {
-  padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 1.5rem 1.5rem 3rem;
 }
 
-.header {
-  margin-bottom: 1.5rem;
+.dateLine {
+  font-size: 0.86rem;
+  color: #7a7368;
+  margin-bottom: 0.35rem;
+  text-align: center;
 }
 
-.pageTitle {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text);
+.error {
+  text-align: center;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  background: rgba(255, 236, 236, 0.9);
+  color: #bb3b3b;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
 }
 
-.subtitle {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  margin-top: 0.25rem;
-}
-
-.totalCard {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  color: white;
-  border-radius: 12px;
-  padding: 1.25rem 2rem;
+/* Spending Card */
+.spendingCard {
+  position: relative;
+  background: var(--gradient);
+  border-radius: var(--radius);
+  padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 14px 32px rgba(124, 92, 230, 0.25);
 }
 
-.totalLabel {
-  font-size: 1rem;
-  opacity: 0.9;
+.spendingInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
-.totalAmount {
-  font-size: 2rem;
+.spendingLabel {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.spendingAmount {
+  font-size: 2.5rem;
   font-weight: 700;
+  color: white;
+  line-height: 1;
+  letter-spacing: -0.03em;
 }
 
+.addCircle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.addCircle:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Grid Layout */
 .grid {
   display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 2rem;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 1.1rem;
+  align-items: start;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
   .grid {
     grid-template-columns: 1fr;
   }
 }
 
+/* Cards */
+.formCard,
+.listCard {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 251, 246, 0.86));
+  box-shadow: var(--shadow);
+}
+
+.formCard {
+  padding: 1rem;
+}
+
+.listCard {
+  padding: 1rem;
+}
+
 .sectionTitle {
   font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 1rem;
   color: var(--text);
+  padding: 0.5rem 0.5rem 0.75rem;
 }
 
 .loading {
   text-align: center;
+  padding: 2rem 1rem;
   color: var(--text-muted);
-  padding: 2rem;
+  font-size: 0.9rem;
 }
