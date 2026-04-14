@@ -1,5 +1,7 @@
 const crypto = require('crypto');
 const dbConnect = require('../config/db');
+const { Session } = require('../models/Session');
+const { User } = require('../models/User');
 
 function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -14,31 +16,30 @@ async function requireAuth(req, res, next) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
-    const db = await dbConnect();
-    const tokenHash = hashToken(token);
-    const session = db.prepare(`
-      SELECT sessions.id, sessions.user_id, sessions.expires_at, users.email, users.name
-      FROM sessions
-      JOIN users ON users.id = sessions.user_id
-      WHERE sessions.token_hash = ?
-    `).get(tokenHash);
+    await dbConnect();
 
+    const session = await Session.findOne({ tokenHash: hashToken(token) }).lean();
     if (!session) {
       return res.status(401).json({ success: false, error: 'Invalid session' });
     }
 
-    if (new Date(session.expires_at).getTime() <= Date.now()) {
-      db.prepare('DELETE FROM sessions WHERE id = ?').run(session.id);
+    if (new Date(session.expiresAt).getTime() <= Date.now()) {
+      await Session.deleteOne({ _id: session._id });
       return res.status(401).json({ success: false, error: 'Session expired' });
     }
 
-    req.user = {
-      id: session.user_id,
-      email: session.email,
-      name: session.name,
-    };
+    const user = await User.findById(session.userId).lean();
+    if (!user) {
+      await Session.deleteOne({ _id: session._id });
+      return res.status(401).json({ success: false, error: 'Invalid session' });
+    }
 
-    req.sessionId = session.id;
+    req.user = {
+      id: user._id.toString(),
+      email: user.email,
+      name: user.name,
+    };
+    req.sessionId = session._id.toString();
     next();
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

@@ -1,9 +1,10 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const dbConnect = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
-const { EXPENSE_CATEGORIES, queryExpenses } = require('../models/Expense');
+const { Expense, EXPENSE_CATEGORIES } = require('../models/Expense');
 
 const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -42,7 +43,6 @@ function getPeriodRange(period) {
 
 router.use(requireAuth);
 
-// POST /api/ai/query - Natural language expense query
 router.post('/query', async (req, res) => {
   try {
     if (!anthropic) {
@@ -50,12 +50,11 @@ router.post('/query', async (req, res) => {
     }
 
     const { question } = req.body;
-
     if (!question || typeof question !== 'string') {
       return res.status(400).json({ success: false, error: 'Question is required' });
     }
 
-    const db = await dbConnect();
+    await dbConnect();
 
     const classificationPrompt = `You are an expense query classifier. Given a user's question about their expenses, classify it and extract parameters.
 
@@ -87,13 +86,27 @@ Respond with only valid JSON, no markdown or explanation.`;
 
     const classification = JSON.parse(jsonMatch[0]);
     const periodRange = getPeriodRange(classification.period);
-    const expenses = queryExpenses(db, {
-      userId: req.user.id,
-      category: classification.category || undefined,
-      startDate: classification.startDate || periodRange.startDate,
-      endDate: classification.endDate || periodRange.endDate,
-      limit: classification.limit || 10,
-    });
+
+    const query = {
+      userId: new mongoose.Types.ObjectId(req.user.id),
+    };
+
+    if (classification.category) {
+      query.category = classification.category;
+    }
+
+    const startDate = classification.startDate || periodRange.startDate;
+    const endDate = classification.endDate || periodRange.endDate;
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = new Date(startDate);
+      if (endDate) query.date.$lte = new Date(endDate);
+    }
+
+    const expenses = await Expense.find(query)
+      .sort({ date: -1, createdAt: -1 })
+      .limit(classification.limit || 10);
+
     const grandTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
     const responsePrompt = `You are a friendly expense tracker assistant. The user asked: "${question}"
