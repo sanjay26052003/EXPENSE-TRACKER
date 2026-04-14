@@ -45,7 +45,7 @@ export default function ChatPage() {
         ...prev,
         {
           role: 'ai',
-          content: `Sorry, I couldn't process that. ${err.message}. Make sure the backend server and ANTHROPIC_API_KEY are configured.`,
+          content: `Sorry, I couldn't process that. ${err.message}. Make sure the backend server and OPENROUTER_API_KEY are configured.`,
         },
       ]);
     } finally {
