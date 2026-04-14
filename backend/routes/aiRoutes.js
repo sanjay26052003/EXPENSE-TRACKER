@@ -1,14 +1,34 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
-const Anthropic = require('@anthropic-ai/sdk');
 const dbConnect = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { Expense, EXPENSE_CATEGORIES } = require('../models/Expense');
 
-const anthropic = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || null;
+
+async function callModel(prompt, maxTokens) {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/gemma-4-26b-a4b-it:free',
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`OpenRouter API error: ${err}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
 
 function getPeriodRange(period) {
   const now = new Date();
@@ -45,8 +65,8 @@ router.use(requireAuth);
 
 router.post('/query', async (req, res) => {
   try {
-    if (!anthropic) {
-      return res.status(503).json({ success: false, error: 'ANTHROPIC_API_KEY is not configured' });
+    if (!OPENROUTER_API_KEY) {
+      return res.status(503).json({ success: false, error: 'OPENROUTER_API_KEY is not configured' });
     }
 
     const { question } = req.body;
@@ -72,14 +92,9 @@ User question: "${question}"
 
 Respond with only valid JSON, no markdown or explanation.`;
 
-    const claudeResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 300,
-      messages: [{ role: 'user', content: classificationPrompt }],
-    });
+    const claudeResponse = await callModel(classificationPrompt, 300);
 
-    const rawText = claudeResponse.content[0].text.trim();
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    const jsonMatch = claudeResponse.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('Could not parse classification');
     }
@@ -118,16 +133,12 @@ Based on their expense data:
 
 Provide a clear, friendly answer. If there are no expenses, say so.`;
 
-    const answerResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 500,
-      messages: [{ role: 'user', content: responsePrompt }],
-    });
+    const answerResponse = await callModel(responsePrompt, 500);
 
     res.json({
       success: true,
       data: {
-        answer: answerResponse.content[0].text.trim(),
+        answer: answerResponse.trim(),
         query: {
           intent: classification.intent,
           category: classification.category,
