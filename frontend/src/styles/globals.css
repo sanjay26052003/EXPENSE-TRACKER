@@ -5,37 +5,36 @@
 }
 
 :root {
-  --primary: #7c5ce6;
-  --primary-dark: #6946dd;
-  --primary-soft: #ece4ff;
-  --primary-light: #a38cf2;
-  --gradient: linear-gradient(135deg, #8b6af0, #6f52df);
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-soft: #eef2ff;
+  --primary-light: #a5b4fc;
+  --gradient: linear-gradient(135deg, #6366f1, #4f46e5);
   --danger: #ef4444;
   --danger-dark: #dc2626;
-  --success: #1f9d74;
+  --success: #22c55e;
   --warning: #f59e0b;
-  --bg: #fbf7ef;
-  --bg-accent: #f4eee1;
-  --card-bg: rgba(255, 255, 255, 0.88);
-  --input-bg: #fbf7f1;
-  --text: #211b2f;
-  --text-muted: #7e768f;
-  --text-dim: #b8afc4;
-  --border: #e8e0d2;
-  --shadow: 0 12px 30px rgba(85, 62, 129, 0.08);
-  --shadow-md: 0 18px 40px rgba(85, 62, 129, 0.12);
-  --radius: 18px;
-  --radius-sm: 12px;
+  --bg: #f8fafc;
+  --bg-accent: #f1f5f9;
+  --card-bg: #ffffff;
+  --input-bg: #f8fafc;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  --border: #e2e8f0;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --radius: 12px;
+  --radius-sm: 8px;
 }
 
 body {
-  font-family: 'Segoe UI', 'Trebuchet MS', sans-serif;
-  background:
-    radial-gradient(circle at top center, rgba(245, 216, 154, 0.22), transparent 28rem),
-    linear-gradient(180deg, #fffdfa, var(--bg));
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
   color: var(--text);
   line-height: 1.6;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -62,7 +61,7 @@ textarea::placeholder {
 }
 
 select option {
-  background: var(--input-bg);
+  background: white;
   color: var(--text);
 }
 
