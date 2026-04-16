@@ -5,31 +5,6 @@ const dbConnect = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { Expense, EXPENSE_CATEGORIES } = require('../models/Expense');
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || null;
-
-async function callModel(prompt, maxTokens) {
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'google/gemma-4-26b-a4b-it:free',
-      max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`OpenRouter API error: ${err}`);
-  }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
-}
-
 function getPeriodRange(period) {
   const now = new Date();
   const year = now.getFullYear();
@@ -61,12 +36,40 @@ function getPeriodRange(period) {
   }
 }
 
+async function callModel(prompt) {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'http://localhost:3000',
+      'X-Title': 'Expense Tracker',
+    },
+    body: JSON.stringify({
+      model: 'liquid/lfm-2.5-1.2b-instruct:free',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1024,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`OpenRouter API error (${response.status}): ${errText}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
 router.use(requireAuth);
 
 router.post('/query', async (req, res) => {
   try {
-    if (!OPENROUTER_API_KEY) {
-      return res.status(503).json({ success: false, error: 'OPENROUTER_API_KEY is not configured' });
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(503).json({
+        success: false,
+        error: 'OPENROUTER_API_KEY is not configured. Make sure the backend .env file has this key set.'
+      });
     }
 
     const { question } = req.body;
@@ -76,30 +79,44 @@ router.post('/query', async (req, res) => {
 
     await dbConnect();
 
-    const classificationPrompt = `You are an expense query classifier. Given a user's question about their expenses, classify it and extract parameters.
+    const classificationPrompt = `
+You are an AI assistant for an expense tracker.
+
+Your job:
+1. If the message is about expenses → extract data
+2. If it's casual chat (hello, how are you, etc.) → mark as "chat"
 
 Categories: ${EXPENSE_CATEGORIES.join(', ')}
 
-Return a JSON object with:
-- intent: one of ["total_spending", "category_spending", "date_range", "recent_expenses", "top_categories", "comparison"]
-- category: the expense category if mentioned (null otherwise)
-- period: "current_month", "last_month", "last_week", "last_3_months", or null
-- limit: number of results (default 5)
-- startDate: ISO date string if specific (null otherwise)
-- endDate: ISO date string if specific (null otherwise)
+Return ONLY JSON:
+{
+  "intent": "chat" | "total_spending" | "category_spending" | "date_range" | "recent_expenses" | "top_categories" | "comparison",
+  "category": string or null,
+  "period": "current_month" | "last_month" | "last_week" | "last_3_months" | null,
+  "limit": number,
+  "startDate": string or null,
+  "endDate": string or null
+}
 
-User question: "${question}"
+User: "${question}"
+`;
+    const claudeResponse = await callModel(classificationPrompt);
 
-Respond with only valid JSON, no markdown or explanation.`;
+let classification;
 
-    const claudeResponse = await callModel(classificationPrompt, 300);
+try {
+  const jsonMatch = claudeResponse.match(/\{[\s\S]*\}/);
 
-    const jsonMatch = claudeResponse.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Could not parse classification');
-    }
+  if (!jsonMatch) {
+    console.log("AI RAW RESPONSE:", claudeResponse);
+    throw new Error("No JSON found in AI response");
+  }
 
-    const classification = JSON.parse(jsonMatch[0]);
+  classification = JSON.parse(jsonMatch[0]);
+} catch (err) {
+  console.error("Parsing Error:", err.message);
+  throw new Error("Failed to parse AI response");
+}
     const periodRange = getPeriodRange(classification.period);
 
     const query = {
@@ -110,12 +127,19 @@ Respond with only valid JSON, no markdown or explanation.`;
       query.category = classification.category;
     }
 
-    const startDate = classification.startDate || periodRange.startDate;
+    function isValidDate(d) {
+  return d instanceof Date && !isNaN(d.getTime());
+}
+
+const startDate = classification.startDate || periodRange.startDate;
     const endDate = classification.endDate || periodRange.endDate;
-    if (startDate || endDate) {
-      query.date = {};
-      if (startDate) query.date.$gte = new Date(startDate);
-      if (endDate) query.date.$lte = new Date(endDate);
+    if (startDate && isValidDate(new Date(startDate))) {
+      query.date = query.date || {};
+      query.date.$gte = new Date(startDate);
+    }
+    if (endDate && isValidDate(new Date(endDate))) {
+      query.date = query.date || {};
+      query.date.$lte = new Date(endDate);
     }
 
     const expenses = await Expense.find(query)
@@ -123,6 +147,25 @@ Respond with only valid JSON, no markdown or explanation.`;
       .limit(classification.limit || 10);
 
     const grandTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+    const summaryData = Object.entries(
+      expenses.reduce((acc, exp) => {
+        if (!acc[exp.category]) acc[exp.category] = { total: 0, count: 0 };
+        acc[exp.category].total += exp.amount;
+        acc[exp.category].count += 1;
+        return acc;
+      }, {})
+    ).map(([category, { total, count }]) => ({ _id: category, total, count }))
+      .sort((a, b) => b.total - a.total);
+
+    const topCategories = summaryData.slice(0, 3);
+    const periodLabels = {
+      current_month: 'this month',
+      last_month: 'last month',
+      last_week: 'this week',
+      last_3_months: 'last 3 months',
+    };
+    const periodLabel = periodLabels[classification.period] || null;
 
     const responsePrompt = `You are a friendly expense tracker assistant. The user asked: "${question}"
 
@@ -133,7 +176,7 @@ Based on their expense data:
 
 Provide a clear, friendly answer. If there are no expenses, say so.`;
 
-    const answerResponse = await callModel(responsePrompt, 500);
+    const answerResponse = await callModel(responsePrompt);
 
     res.json({
       success: true,
@@ -146,11 +189,15 @@ Provide a clear, friendly answer. If there are no expenses, say so.`;
         },
         expenseData: expenses,
         grandTotal,
+        summaryData,
+        topCategories,
+        periodLabel,
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
+  console.error("FULL ERROR:", error); // 👈 VERY IMPORTANT
+  res.status(500).json({ success: false, error: error.message });
+}
 });
 
 module.exports = router;

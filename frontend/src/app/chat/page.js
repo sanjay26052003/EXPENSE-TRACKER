@@ -19,6 +19,7 @@ export default function ChatPage() {
       role: 'ai',
       content:
         "Hi! I'm your AI expense assistant. Ask me anything about your spending — like 'How much did I spend on food this month?' or 'Show me last week's expenses.'",
+      structuredData: null,
     },
   ]);
   const [input, setInput] = useState('');
@@ -34,18 +35,36 @@ export default function ChatPage() {
     if (!question || loading) return;
 
     setInput('');
-    setMessages((prev) => [...prev, { role: 'user', content: question }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', content: question, structuredData: null },
+    ]);
     setLoading(true);
 
     try {
       const data = await api.askAI(question);
-      setMessages((prev) => [...prev, { role: 'ai', content: data.data.answer }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'ai',
+          content: data.data.answer,
+          structuredData: {
+            intent: data.data.query?.intent,
+            period: data.data.periodLabel,
+            grandTotal: data.data.grandTotal,
+            summaryData: data.data.summaryData,
+            topCategories: data.data.topCategories,
+            expenseData: data.data.expenseData,
+          },
+        },
+      ]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
         {
           role: 'ai',
           content: `Sorry, I couldn't process that. ${err.message}. Make sure the backend server and OPENROUTER_API_KEY are configured.`,
+          structuredData: null,
         },
       ]);
     } finally {
@@ -84,7 +103,12 @@ export default function ChatPage() {
       <div className={styles.chatBox}>
         <div className={styles.messages}>
           {messages.map((msg, i) => (
-            <ChatMessage key={i} role={msg.role} content={msg.content} />
+            <ChatMessage
+              key={i}
+              role={msg.role}
+              content={msg.content}
+              structuredData={msg.structuredData}
+            />
           ))}
           {loading && (
             <div className={styles.loadingWrapper}>

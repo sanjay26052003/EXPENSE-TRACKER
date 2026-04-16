@@ -42,7 +42,7 @@ async function requireAuth(req, res, next) {
     req.sessionId = session._id.toString();
     next();
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   }
 }
 

@@ -1,15 +1,19 @@
 import styles from './ChatMessage.module.css';
+import StructuredDataRenderer from './StructuredDataRenderer';
 
-export default function ChatMessage({ role, content }) {
+export default function ChatMessage({ role, content, structuredData }) {
   const isUser = role === 'user';
 
   return (
     <div className={`${styles.message} ${isUser ? styles.user : styles.ai}`}>
       <div className={styles.avatar}>
-        {isUser ? '👤' : '🤖'}
+        {isUser ? '\u{1F464}' : '\u{1F916}'}
       </div>
       <div className={styles.bubble}>
         <p>{content}</p>
+        {!isUser && structuredData && (
+          <StructuredDataRenderer data={structuredData} />
+        )}
       </div>
     </div>
   );

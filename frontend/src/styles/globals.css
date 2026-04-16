@@ -5,32 +5,32 @@
 }
 
 :root {
-  --primary: #6366f1;
-  --primary-dark: #4f46e5;
-  --primary-soft: #eef2ff;
-  --primary-light: #a5b4fc;
-  --gradient: linear-gradient(135deg, #6366f1, #4f46e5);
+  --primary: #8185f7;
+  --primary-dark: #6b70f5;
+  --primary-soft: #eeeeff;
+  --primary-light: #b1b5fe;
+  --gradient: linear-gradient(135deg, #9ea4fd, #7c82f8);
   --danger: #ef4444;
   --danger-dark: #dc2626;
   --success: #22c55e;
   --warning: #f59e0b;
-  --bg: #f8fafc;
-  --bg-accent: #f1f5f9;
+  --bg: #eeeeff;
+  --bg-accent: #e6e7fd;
   --card-bg: #ffffff;
-  --input-bg: #f8fafc;
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --text-dim: #94a3b8;
-  --border: #e2e8f0;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --radius: 12px;
-  --radius-sm: 8px;
+  --input-bg: #f2f3ff;
+  --text: #1a1a2e;
+  --text-muted: #5a5a7a;
+  --text-dim: #9494b8;
+  --border: #c7caf8;
+  --shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+  --shadow-md: 0 8px 24px rgba(99, 102, 241, 0.12);
+  --radius: 14px;
+  --radius-sm: 10px;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
-  background: var(--bg);
+  background: linear-gradient(180deg, #f5f6ff 0%, #eeeeff 100%);
   color: var(--text);
   line-height: 1.6;
   min-height: 100vh;

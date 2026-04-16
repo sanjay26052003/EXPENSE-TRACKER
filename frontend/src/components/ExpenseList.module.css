@@ -1,11 +1,11 @@
 .empty {
   text-align: center;
-  padding: 2.5rem 1rem;
+  padding: 2rem 1rem;
   color: var(--text-dim);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
 }
 
 .empty p {
@@ -14,38 +14,38 @@
 }
 
 .empty span {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.1rem;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid var(--border);
-  transition: all 0.2s;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
 }
 
 .item:hover {
-  border-color: #d6cbeb;
+  border-color: var(--border);
 }
 
 .icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 0.85rem;
   flex-shrink: 0;
 }
 
@@ -64,21 +64,21 @@
 .category,
 .categoryName {
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   color: var(--text);
 }
 
 .description,
 .inlineTitle {
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
   font-weight: 400;
 }
 
 .amount {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   white-space: nowrap;
 }
 
@@ -86,38 +86,38 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0.3rem;
+  margin-top: 0.2rem;
 }
 
 .date {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--text-dim);
 }
 
 .actions {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.3rem;
 }
 
 .editBtn,
 .deleteBtn,
 .rowDelete {
-  font-size: 0.75rem;
-  padding: 0.3rem 0.65rem;
-  border-radius: 8px;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
   border: none;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .editBtn {
-  background: #f3edf8;
+  background: var(--bg-accent);
   color: var(--text-muted);
 }
 
 .deleteBtn,
 .rowDelete {
-  background: rgba(239, 68, 68, 0.1);
+  background: #fff0f0;
   color: var(--danger);
 }
 
@@ -128,22 +128,22 @@
 .tableHeader,
 .tableRow {
   display: grid;
-  grid-template-columns: 54px minmax(140px, 1.15fr) minmax(120px, 1fr) 108px 110px;
+  grid-template-columns: 48px minmax(140px, 1.15fr) minmax(120px, 1fr) 100px 100px;
   align-items: center;
-  column-gap: 0.85rem;
+  column-gap: 0.75rem;
 }
 
 .tableHeader {
-  padding: 0.1rem 0.7rem 0.7rem;
-  color: #887f96;
-  font-size: 0.78rem;
-  border-bottom: 1px solid rgba(232, 224, 210, 0.95);
+  padding: 0.1rem 0.6rem 0.6rem;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .tableRow {
   position: relative;
-  padding: 0.8rem 0.7rem;
-  border-bottom: 1px solid rgba(232, 224, 210, 0.75);
+  padding: 0.7rem 0.6rem;
+  border-bottom: 1px solid var(--bg-accent);
 }
 
 .tableRow:last-child {
@@ -156,12 +156,12 @@
 }
 
 .iconTile {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
   display: grid;
   place-items: center;
-  font-size: 0.92rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
@@ -169,7 +169,7 @@
 .descriptionCell,
 .dateCell,
 .amountCell {
-  font-size: 0.87rem;
+  font-size: 0.84rem;
   color: var(--text);
 }
 
@@ -193,8 +193,8 @@
 
 .rowDelete {
   position: absolute;
-  right: 0.7rem;
-  bottom: 0.7rem;
+  right: 0.6rem;
+  bottom: 0.6rem;
   opacity: 0;
 }
 
@@ -209,7 +209,7 @@
 
   .tableRow {
     grid-template-columns: 44px 1fr;
-    row-gap: 0.3rem;
+    row-gap: 0.25rem;
   }
 
   .descriptionCell,
@@ -227,6 +227,6 @@
     grid-column: 2;
     opacity: 1;
     justify-self: start;
-    margin-top: 0.2rem;
+    margin-top: 0.15rem;
   }
 }

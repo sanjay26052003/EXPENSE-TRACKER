@@ -50,3 +50,22 @@
   color: white;
   border-bottom-right-radius: 4px;
 }
+
+@media (max-width: 480px) {
+  .bubble {
+    max-width: 85%;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.82rem;
+  }
+
+  .message {
+    gap: 0.4rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+}

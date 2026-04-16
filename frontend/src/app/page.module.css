@@ -5,8 +5,8 @@
 }
 
 .dateLine {
-  font-size: 0.86rem;
-  color: #7a7368;
+  font-size: 0.82rem;
+  color: var(--text-muted);
   margin-bottom: 0.35rem;
   text-align: center;
 }
@@ -15,40 +15,38 @@
   text-align: center;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(239, 68, 68, 0.18);
-  background: rgba(255, 236, 236, 0.9);
-  color: #bb3b3b;
-  font-size: 0.85rem;
+  border: 1px solid rgba(239, 68, 68, 0.16);
+  background: #fef2f2;
+  color: var(--danger);
+  font-size: 0.84rem;
   margin-bottom: 1rem;
 }
 
 /* Spending Card */
 .spendingCard {
-  position: relative;
   background: var(--gradient);
   border-radius: var(--radius);
-  padding: 1.5rem 2rem;
+  padding: 1.35rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 14px 32px rgba(124, 92, 230, 0.25);
+  margin-bottom: 1.25rem;
 }
 
 .spendingInfo {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.15rem;
 }
 
 .spendingLabel {
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.88rem;
   font-weight: 500;
 }
 
 .spendingAmount {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
   color: white;
   line-height: 1;
@@ -56,8 +54,8 @@
 }
 
 .addCircle {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.2);
@@ -66,7 +64,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
   flex-shrink: 0;
 }
 
@@ -78,13 +76,35 @@
 .grid {
   display: grid;
   grid-template-columns: 1fr 1.4fr;
-  gap: 1.1rem;
+  gap: 1rem;
   align-items: start;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 640px) {
+  .container {
+    padding: 0.75rem;
+  }
+
+  .spendingCard {
+    padding: 1rem;
+  }
+
+  .spendingAmount {
+    font-size: 1.6rem;
+  }
+
+  .addCircle {
+    width: 36px;
+    height: 36px;
+  }
+
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .formCard,
+  .listCard {
+    padding: 1rem;
   }
 }
 
@@ -93,28 +113,28 @@
 .listCard {
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 251, 246, 0.86));
+  background: var(--card-bg);
   box-shadow: var(--shadow);
 }
 
 .formCard {
-  padding: 1rem;
+  padding: 1.25rem;
 }
 
 .listCard {
-  padding: 1rem;
+  padding: 1.25rem;
 }
 
 .sectionTitle {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text);
-  padding: 0.5rem 0.5rem 0.75rem;
+  padding: 0 0.25rem 0.75rem;
 }
 
 .loading {
   text-align: center;
   padding: 2rem 1rem;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
