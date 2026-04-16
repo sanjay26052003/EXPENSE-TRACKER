@@ -1,2 +1,15 @@
-buildCommand: cd backend && npm install
-startCommand: sh -c "cd backend && node index.js"
+services:
+  - type: web
+    name: expense-tracker-backend
+    env: node
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: PORT
+        value: "10000"
