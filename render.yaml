@@ -3,13 +3,10 @@ services:
     name: expense-tracker-backend
     env: node
     region: oregon
-    rootDir: backend
-    buildCommand: npm install
-    startCommand: node index.js
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node index.js
     envVars:
       - key: MONGODB_URI
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
-      - key: PORT
-        value: "10000"

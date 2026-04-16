@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://expense-tracker-server.onrender.com';
 const TOKEN_STORAGE_KEY = 'expense-tracker-token';
 
 export class APIError extends Error {
@@ -13,15 +13,11 @@ export function getStoredToken() {
   if (typeof window === 'undefined') {
     return null;
   }
-
   return window.localStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
 export function setStoredToken(token) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
+  if (typeof window === 'undefined') return;
   if (token) {
     window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
   } else {
@@ -30,21 +26,13 @@ export function setStoredToken(token) {
 }
 
 async function fetchAPI(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
   const token = options.token ?? getStoredToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const res = await fetch(url, {
-    headers,
-    ...options,
-  });
+  // Use relative URL — Next.js API routes proxy to backend
+  const url = `/api${endpoint}`;
+  const res = await fetch(url, { headers, ...options });
 
   let data;
   try {
@@ -56,23 +44,22 @@ async function fetchAPI(endpoint, options = {}) {
   if (!res.ok) {
     throw new APIError(data?.error || 'Request failed', res.status);
   }
-
   return data;
 }
 
 export const api = {
-  register: (data) => fetchAPI('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
-  login: (data) => fetchAPI('/api/auth/login', { method: 'POST', body: JSON.stringify(data) }),
-  me: () => fetchAPI('/api/auth/me'),
-  logout: () => fetchAPI('/api/auth/logout', { method: 'POST' }),
+  register: (data) => fetchAPI('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  login: (data) => fetchAPI('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+  me: () => fetchAPI('/auth/me'),
+  logout: () => fetchAPI('/auth/logout', { method: 'POST' }),
 
-  getExpenses: (month) => fetchAPI(`/api/expenses${month ? `?month=${month}` : ''}`),
-  getGroupedExpenses: (month) => fetchAPI(`/api/expenses/grouped${month ? `?month=${month}` : ''}`),
-  getSummary: (month) => fetchAPI(`/api/expenses/summary${month ? `?month=${month}` : ''}`),
-  createExpense: (data) => fetchAPI('/api/expenses', { method: 'POST', body: JSON.stringify(data) }),
-  updateExpense: (id, data) => fetchAPI(`/api/expenses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  deleteExpense: (id) => fetchAPI(`/api/expenses/${id}`, { method: 'DELETE' }),
-  askAI: (question) => fetchAPI('/api/ai/query', { method: 'POST', body: JSON.stringify({ question }) }),
+  getExpenses: (month) => fetchAPI(`/expenses${month ? `?month=${month}` : ''}`),
+  getGroupedExpenses: (month) => fetchAPI(`/expenses/grouped${month ? `?month=${month}` : ''}`),
+  getSummary: (month) => fetchAPI(`/expenses/summary${month ? `?month=${month}` : ''}`),
+  createExpense: (data) => fetchAPI('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+  updateExpense: (id, data) => fetchAPI(`/expenses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteExpense: (id) => fetchAPI(`/expenses/${id}`, { method: 'DELETE' }),
+  askAI: (question) => fetchAPI('/ai/query', { method: 'POST', body: JSON.stringify({ question }) }),
 };
 
 export default api;
