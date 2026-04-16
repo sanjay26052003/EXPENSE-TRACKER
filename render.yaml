@@ -1,0 +1,8 @@
+buildCommand: cd backend && npm install
+startCommand: cd backend && node index.js
+routes:
+  - path: /api
+    status: 200
+    headers:
+      - key: Cache-Control
+        value: no-cache
