@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { EXPENSE_CATEGORIES } from '@/lib/categories';
 import styles from './ExpenseForm.module.css';
 
-export default function ExpenseForm({ onSubmit, initialData = null, submitLabel = 'Add Expense' }) {
+export default function ExpenseForm({
+  onSubmit,
+  initialData = null,
+  submitLabel = 'Add Expense',
+  onCancel = null,
+}) {
   const [amount, setAmount] = useState(initialData?.amount || '');
   const [category, setCategory] = useState(initialData?.category || EXPENSE_CATEGORIES[0]);
   const [description, setDescription] = useState(initialData?.description || '');
@@ -90,6 +95,7 @@ export default function ExpenseForm({ onSubmit, initialData = null, submitLabel 
           className={styles.input}
           maxLength={200}
         />
+        <span className={styles.helper}>{description.length}/200 characters</span>
       </div>
 
       <div className={styles.field}>
@@ -103,9 +109,16 @@ export default function ExpenseForm({ onSubmit, initialData = null, submitLabel 
         />
       </div>
 
-      <button type="submit" className={styles.btn} disabled={loading}>
-        {loading ? 'Saving...' : submitLabel}
-      </button>
+      <div className={styles.actions}>
+        {onCancel ? (
+          <button type="button" className={styles.secondaryBtn} onClick={onCancel} disabled={loading}>
+            Cancel
+          </button>
+        ) : null}
+        <button type="submit" className={styles.btn} disabled={loading}>
+          {loading ? 'Saving...' : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

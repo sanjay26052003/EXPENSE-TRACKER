@@ -1,85 +1,73 @@
-# AI-Powered Personal Finance Tracker
+# Expense Tracker
 
-A full-stack expense tracker with AI chatbot capabilities.
+A full-stack expense tracker with:
 
-## Tech Stack
+- local account-based auth
+- fast expense entry and editing
+- monthly category summaries
+- an AI assistant for totals, recent expenses, top categories, and period comparisons
 
-- **Frontend**: Next.js (React) + CSS Modules
-- **Backend**: Node.js + Express
-- **Database**: MongoDB + Mongoose
-- **AI**: Claude API (Anthropic)
+## Stack
 
-## Project Structure
+- `frontend/`: Next.js 15, React 19, CSS Modules
+- `backend/`: Express, Mongoose, MongoDB
+- `frontend/src/app/api/*`: thin proxy routes to the backend API
 
-```
-EXPENSE-TRACKER/
-├── client/          # Next.js Frontend
-│   ├── src/
-│   │   ├── app/     # Pages (Dashboard, Expenses, Summary, Chat)
-│   │   ├── components/  # Reusable UI components
-│   │   └── lib/     # API utilities, categories
-│   └── package.json
-│
-├── server/          # Express Backend
-│   ├── config/      # MongoDB connection
-│   ├── models/      # Mongoose schemas
-│   ├── routes/      # API endpoints
-│   └── index.js     # Express entry point
-│
-└── README.md
-```
+## Local Setup
 
-## Setup
-
-### 1. Install Dependencies
+### 1. Install dependencies
 
 ```bash
-# Backend dependencies
-cd server
-npm install
-
-# Frontend dependencies
-cd ../client
-npm install
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-### 2. Configure Environment Variables
+### 2. Configure environment variables
 
-**Server** (`server/.env`):
-```
-PORT=5000
+Backend `.env`:
+
+```bash
+PORT=5001
 MONGODB_URI=mongodb://localhost:27017/expense-tracker
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+OPENROUTER_API_KEY=your_key_here
+OPENROUTER_MODEL=openai/gpt-4o-mini
+APP_BASE_URL=http://localhost:3000
+ALLOWED_ORIGINS=http://localhost:3000
 ```
 
-**Client** (`client/.env.local`):
-```
-NEXT_PUBLIC_API_URL=http://localhost:5000
-```
+Frontend `.env.local`:
 
-### 3. Start MongoDB
-
-Make sure MongoDB is running locally or update `MONGODB_URI` to point to your MongoDB Atlas cluster.
-
-### 4. Run the Application
-
-**Terminal 1 — Backend**:
 ```bash
-cd server
+NEXT_PUBLIC_API_URL=http://localhost:5001
+```
+
+`OPENROUTER_API_KEY` is optional. If it is missing, the chat still answers core questions using deterministic logic instead of hosted AI phrasing.
+
+### 3. Run the app
+
+Terminal 1:
+
+```bash
+cd backend
 npm start
 ```
-Server runs on `http://localhost:5000`
 
-**Terminal 2 — Frontend**:
+Terminal 2:
+
 ```bash
-cd client
+cd frontend
 npm run dev
 ```
-Client runs on `http://localhost:3000`
 
-## Features
+## Product Areas
 
-- **Dashboard**: Monthly spending overview + quick expense entry
-- **Expenses**: View all expenses grouped by date with filters
-- **Summary**: Category-wise spending breakdown with visual bars
-- **AI Chat**: Ask about your expenses in natural language (e.g., "How much did I spend on food this month?")
+- `/`: dashboard with quick add, recent activity, and monthly headline metrics
+- `/expenses`: grouped transaction log with edit and delete flows
+- `/summary`: category totals and top-spend overview
+- `/chat`: AI assistant backed by real expense aggregates
+
+## Notes
+
+- The backend is the source of truth for auth, expense data, and AI answers.
+- The Next.js API routes exist to keep the frontend on relative `/api/*` calls while proxying to the backend.
+- `npm run build` in `frontend/` succeeds in the current codebase.

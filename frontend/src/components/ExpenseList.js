@@ -76,7 +76,7 @@ export default function ExpenseList({ expenses, onDelete, onEdit, variant = 'car
                 </span>
               </div>
               <div className={styles.descriptionCell}>
-                {expense.description || 'Placeholder Description'}
+                {expense.description || 'No description'}
               </div>
               <div className={styles.dateCell}>{formatDate(expense.date)}</div>
               <div className={styles.amountCell}>{formatAmount(expense.amount)}</div>
@@ -116,12 +116,12 @@ export default function ExpenseList({ expenses, onDelete, onEdit, variant = 'car
                 <span className={styles.date}>{formatDate(expense.date)}</span>
                 <div className={styles.actions}>
                   {onEdit ? (
-                    <button onClick={() => onEdit(expense)} className={styles.editBtn}>
+                    <button type="button" onClick={() => onEdit(expense)} className={styles.editBtn}>
                       Edit
                     </button>
                   ) : null}
                   {onDelete ? (
-                    <button onClick={() => onDelete(expense._id)} className={styles.deleteBtn}>
+                    <button type="button" onClick={() => onDelete(expense._id)} className={styles.deleteBtn}>
                       Delete
                     </button>
                   ) : null}

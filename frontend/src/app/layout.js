@@ -4,7 +4,7 @@ import '@/styles/globals.css';
 
 export const metadata = {
   title: 'Expense Tracker',
-  description: 'AI-Powered Personal Finance Tracker',
+  description: 'A focused expense tracker with smart summaries and an AI assistant.',
 };
 
 export const viewport = {

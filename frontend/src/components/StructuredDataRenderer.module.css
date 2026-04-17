@@ -1,8 +1,8 @@
 .container {
-  margin-top: 0.75rem;
+  margin-top: 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.8rem;
 }
 
 .header {
@@ -13,62 +13,53 @@
 }
 
 .intentBadge {
-  display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 600;
+  display: inline-flex;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--primary);
-  background: var(--primary-soft);
-  padding: 0.2rem 0.5rem;
-  border-radius: 20px;
 }
 
 .period {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
-.section {
-  border-top: 1px solid var(--border);
-  padding-top: 0.5rem;
-}
-
-.moreNote {
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  text-align: center;
-  margin-top: 0.4rem;
-}
-
+.metrics,
 .comparisonGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.4rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
 }
 
-.compCard {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 0.4rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
+.metric,
+.comparisonCard {
+  border: 1px solid rgba(16, 35, 31, 0.08);
+  background: rgba(244, 251, 248, 0.95);
+  border-radius: var(--radius-md);
+  padding: 0.9rem;
 }
 
-.compLabel {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  text-align: center;
-}
-
-.compTotal {
-  font-size: 0.95rem;
+.metricLabel,
+.cardLabel {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   font-weight: 700;
-  color: var(--text);
+}
+
+.metricValue,
+.cardValue {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
 }
 
 .positive {
@@ -79,20 +70,20 @@
   color: var(--danger);
 }
 
-@media (max-width: 480px) {
+.section {
+  border-top: 1px solid rgba(16, 35, 31, 0.08);
+  padding-top: 0.8rem;
+}
+
+.moreNote {
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .metrics,
   .comparisonGrid {
     grid-template-columns: 1fr;
-  }
-
-  .intentBadge {
-    font-size: 0.68rem;
-  }
-
-  .period {
-    font-size: 0.72rem;
-  }
-
-  .compTotal {
-    font-size: 0.85rem;
   }
 }

@@ -18,7 +18,10 @@ export default function Navbar() {
       <div className={styles.inner}>
         <div className={styles.brand}>
           <div className={styles.logo}>ET</div>
-          <span className={styles.brandText}>Expense Tracker</span>
+          <div className={styles.brandMeta}>
+            <span className={styles.brandText}>Expense Tracker</span>
+            <span className={styles.brandSubtext}>Simple ledger with AI answers</span>
+          </div>
         </div>
 
         <div className={styles.links}>

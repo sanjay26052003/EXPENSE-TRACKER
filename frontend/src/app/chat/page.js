@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ChatMessage from '@/components/ChatMessage';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import api from '@/lib/api';
 import styles from './page.module.css';
 
 const SUGGESTIONS = [
-  'How much did I spend on food this month?',
-  'Show me my expenses last week',
+  'How much did I spend this month?',
+  'Compare this month with last month',
   'What are my top spending categories?',
-  'What was my total spending last month?',
+  'Show me my latest expenses',
 ];
 
 export default function ChatPage() {
@@ -18,7 +18,7 @@ export default function ChatPage() {
     {
       role: 'ai',
       content:
-        "Hi! I'm your AI expense assistant. Ask me anything about your spending — like 'How much did I spend on food this month?' or 'Show me last week's expenses.'",
+        'Ask about totals, category spending, recent expenses, or period comparisons. I will answer from your recorded data.',
       structuredData: null,
     },
   ]);
@@ -28,33 +28,36 @@ export default function ChatPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, loading]);
 
   async function handleSend() {
     const question = input.trim();
-    if (!question || loading) return;
+    if (!question || loading) {
+      return;
+    }
 
     setInput('');
-    setMessages((prev) => [
-      ...prev,
-      { role: 'user', content: question, structuredData: null },
-    ]);
+    setMessages((prev) => [...prev, { role: 'user', content: question, structuredData: null }]);
     setLoading(true);
 
     try {
-      const data = await api.askAI(question);
+      const response = await api.askAI(question);
       setMessages((prev) => [
         ...prev,
         {
           role: 'ai',
-          content: data.data.answer,
+          content: response.data.answer,
           structuredData: {
-            intent: data.data.query?.intent,
-            period: data.data.periodLabel,
-            grandTotal: data.data.grandTotal,
-            summaryData: data.data.summaryData,
-            topCategories: data.data.topCategories,
-            expenseData: data.data.expenseData,
+            intent: response.data.query?.intent,
+            period: response.data.periodLabel,
+            grandTotal: response.data.grandTotal,
+            summaryData: response.data.summaryData,
+            topCategories: response.data.topCategories,
+            expenseData: response.data.expenseData,
+            expenseCount: response.data.expenseCount,
+            currentTotal: response.data.currentTotal,
+            previousTotal: response.data.previousTotal,
+            percentChange: response.data.percentChange,
           },
         },
       ]);
@@ -63,7 +66,7 @@ export default function ChatPage() {
         ...prev,
         {
           role: 'ai',
-          content: `Sorry, I couldn't process that. ${err.message}. Make sure the backend server and OPENROUTER_API_KEY are configured.`,
+          content: `I couldn't complete that request. ${err.message || 'Please try again.'}`,
           structuredData: null,
         },
       ]);
@@ -72,63 +75,86 @@ export default function ChatPage() {
     }
   }
 
-  function handleKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
+  function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
       handleSend();
     }
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.pageTitle}>AI Expense Assistant</h1>
-        <p className={styles.subtitle}>Ask questions about your expenses in plain English</p>
-      </div>
+    <div className={styles.page}>
+      <section className={styles.hero}>
+        <div>
+          <span className={styles.eyebrow}>AI assistant</span>
+          <h1 className={styles.title}>Ask in plain English. Get actual expense answers back.</h1>
+          <p className={styles.subtitle}>
+            The chat can summarize totals, surface top categories, compare periods, and pull recent transactions without manual filtering.
+          </p>
+        </div>
+        <button
+          type="button"
+          className={styles.clearBtn}
+          onClick={() =>
+            setMessages([
+              {
+                role: 'ai',
+                content:
+                  'Ask about totals, category spending, recent expenses, or period comparisons. I will answer from your recorded data.',
+                structuredData: null,
+              },
+            ])
+          }
+          disabled={loading}
+        >
+          Clear chat
+        </button>
+      </section>
 
-      <div className={styles.suggestions}>
-        <span className={styles.suggestLabel}>Try asking:</span>
-        {SUGGESTIONS.map((s) => (
+      <section className={styles.suggestions}>
+        {SUGGESTIONS.map((suggestion) => (
           <button
-            key={s}
-            className={styles.suggestBtn}
-            onClick={() => setInput(s)}
+            key={suggestion}
+            type="button"
+            className={styles.suggestion}
+            onClick={() => setInput(suggestion)}
             disabled={loading}
           >
-            {s}
+            {suggestion}
           </button>
         ))}
-      </div>
+      </section>
 
-      <div className={styles.chatBox}>
+      <section className={styles.chatShell}>
         <div className={styles.messages}>
-          {messages.map((msg, i) => (
+          {messages.map((message, index) => (
             <ChatMessage
-              key={i}
-              role={msg.role}
-              content={msg.content}
-              structuredData={msg.structuredData}
+              key={`${message.role}-${index}`}
+              role={message.role}
+              content={message.content}
+              structuredData={message.structuredData}
             />
           ))}
-          {loading && (
-            <div className={styles.loadingWrapper}>
-              <LoadingSpinner message="Thinking..." />
+          {loading ? (
+            <div className={styles.loadingRow}>
+              <LoadingSpinner message="Analyzing your data..." />
             </div>
-          )}
+          ) : null}
           <div ref={messagesEndRef} />
         </div>
 
-        <div className={styles.inputArea}>
+        <div className={styles.inputWrap}>
           <textarea
             className={styles.input}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(event) => setInput(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about your expenses..."
-            rows={2}
+            placeholder="Ask about totals, categories, recent expenses, or comparisons..."
+            rows={3}
             disabled={loading}
           />
           <button
+            type="button"
             className={styles.sendBtn}
             onClick={handleSend}
             disabled={!input.trim() || loading}
@@ -136,7 +162,7 @@ export default function ChatPage() {
             Send
           </button>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

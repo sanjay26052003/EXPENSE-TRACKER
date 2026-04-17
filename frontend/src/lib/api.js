@@ -1,4 +1,3 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://expense-tracker-server.onrender.com';
 const TOKEN_STORAGE_KEY = 'expense-tracker-token';
 
 export class APIError extends Error {

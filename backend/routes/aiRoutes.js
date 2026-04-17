@@ -5,6 +5,27 @@ const dbConnect = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { Expense, EXPENSE_CATEGORIES } = require('../models/Expense');
 
+router.use(requireAuth);
+
+const PERIOD_LABELS = {
+  current_month: 'this month',
+  last_month: 'last month',
+  last_week: 'the last 7 days',
+  last_3_months: 'the last 3 months',
+};
+
+function startOfDay(date) {
+  const value = new Date(date);
+  value.setHours(0, 0, 0, 0);
+  return value;
+}
+
+function endOfDay(date) {
+  const value = new Date(date);
+  value.setHours(23, 59, 59, 999);
+  return value;
+}
+
 function getPeriodRange(period) {
   const now = new Date();
   const year = now.getFullYear();
@@ -22,9 +43,9 @@ function getPeriodRange(period) {
         endDate: new Date(year, month, 0, 23, 59, 59, 999),
       };
     case 'last_week': {
-      const weekAgo = new Date(now);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      return { startDate: weekAgo, endDate: now };
+      const endDate = endOfDay(now);
+      const startDate = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6));
+      return { startDate, endDate };
     }
     case 'last_3_months':
       return {
@@ -36,19 +57,131 @@ function getPeriodRange(period) {
   }
 }
 
+function getComparisonRange(period) {
+  const currentRange = getPeriodRange(period || 'current_month');
+  if (!currentRange.startDate || !currentRange.endDate) {
+    return { currentRange: {}, previousRange: {} };
+  }
+
+  const currentStart = new Date(currentRange.startDate);
+  const currentEnd = new Date(currentRange.endDate);
+
+  if (period === 'last_month' || period === 'current_month' || period === 'last_3_months') {
+    const spanInMonths = period === 'last_3_months' ? 3 : 1;
+    const previousStart = new Date(currentStart);
+    previousStart.setMonth(previousStart.getMonth() - spanInMonths);
+    const previousEnd = new Date(currentEnd);
+    previousEnd.setMonth(previousEnd.getMonth() - spanInMonths);
+    return {
+      currentRange,
+      previousRange: {
+        startDate: previousStart,
+        endDate: previousEnd,
+      },
+    };
+  }
+
+  const spanMs = currentEnd.getTime() - currentStart.getTime() + 1;
+  return {
+    currentRange,
+    previousRange: {
+      startDate: new Date(currentStart.getTime() - spanMs),
+      endDate: new Date(currentEnd.getTime() - spanMs),
+    },
+  };
+}
+
+function parseExplicitDate(value) {
+  if (!value || typeof value !== 'string') {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function categoryFromQuestion(question) {
+  const normalized = question.toLowerCase();
+  return (
+    EXPENSE_CATEGORIES.find((category) => normalized.includes(category.toLowerCase())) || null
+  );
+}
+
+function extractLimit(question) {
+  const match = question.match(/(?:last|recent|latest|top|show)\s+(\d{1,2})/i);
+  if (!match) {
+    return null;
+  }
+
+  const limit = Number(match[1]);
+  return Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : null;
+}
+
+function ruleBasedClassification(question) {
+  const normalized = question.trim().toLowerCase();
+  const category = categoryFromQuestion(question);
+  const limit = extractLimit(question) || 5;
+
+  let period = null;
+  if (/\blast 3 months\b|\bpast 3 months\b/.test(normalized)) {
+    period = 'last_3_months';
+  } else if (/\blast month\b|\bprevious month\b/.test(normalized)) {
+    period = 'last_month';
+  } else if (/\blast week\b|\bpast week\b|\bthis week\b|\brecent week\b/.test(normalized)) {
+    period = 'last_week';
+  } else if (/\bthis month\b|\bcurrent month\b/.test(normalized)) {
+    period = 'current_month';
+  }
+
+  const startDate = parseExplicitDate(
+    normalized.match(/\bfrom\s+(\d{4}-\d{2}-\d{2})\b/)?.[1] || null
+  );
+  const endDate = parseExplicitDate(
+    normalized.match(/\bto\s+(\d{4}-\d{2}-\d{2})\b/)?.[1] || null
+  );
+
+  let intent = 'total_spending';
+  if (/^(hi|hello|hey|good morning|good evening)\b/.test(normalized) || /how are you/.test(normalized)) {
+    intent = 'chat';
+  } else if (/\bcompare\b|\bcomparison\b|\bmore than\b|\bless than\b|\bchange\b/.test(normalized)) {
+    intent = 'comparison';
+  } else if (/\btop categories\b|\btop spending\b|\bhighest categories\b/.test(normalized)) {
+    intent = 'top_categories';
+  } else if (/\brecent\b|\blatest\b|\bshow me\b|\blist\b/.test(normalized)) {
+    intent = category || startDate || endDate || period ? 'date_range' : 'recent_expenses';
+  } else if (category) {
+    intent = 'category_spending';
+  } else if (startDate || endDate || period) {
+    intent = 'date_range';
+  }
+
+  return {
+    intent,
+    category,
+    period,
+    limit,
+    startDate: startDate ? startDate.toISOString() : null,
+    endDate: endDate ? endOfDay(endDate).toISOString() : null,
+  };
+}
+
 async function callModel(prompt) {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'http://localhost:3000',
+      'HTTP-Referer': process.env.APP_BASE_URL || 'http://localhost:3000',
       'X-Title': 'Expense Tracker',
     },
     body: JSON.stringify({
-      model: 'liquid/lfm-2.5-1.2b-instruct:free',
+      model: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1024,
+      max_tokens: 700,
     }),
   });
 
@@ -58,37 +191,21 @@ async function callModel(prompt) {
   }
 
   const data = await response.json();
-  return data.choices[0].message.content;
+  return data.choices?.[0]?.message?.content || '';
 }
 
-router.use(requireAuth);
+async function classifyQuestion(question) {
+  const fallback = ruleBasedClassification(question);
+  if (!process.env.OPENROUTER_API_KEY) {
+    return fallback;
+  }
 
-router.post('/query', async (req, res) => {
-  try {
-    if (!process.env.OPENROUTER_API_KEY) {
-      return res.status(503).json({
-        success: false,
-        error: 'OPENROUTER_API_KEY is not configured. Make sure the backend .env file has this key set.'
-      });
-    }
-
-    const { question } = req.body;
-    if (!question || typeof question !== 'string') {
-      return res.status(400).json({ success: false, error: 'Question is required' });
-    }
-
-    await dbConnect();
-
-    const classificationPrompt = `
-You are an AI assistant for an expense tracker.
-
-Your job:
-1. If the message is about expenses → extract data
-2. If it's casual chat (hello, how are you, etc.) → mark as "chat"
+  const prompt = `
+You classify questions for an expense tracker.
 
 Categories: ${EXPENSE_CATEGORIES.join(', ')}
 
-Return ONLY JSON:
+Return JSON only:
 {
   "intent": "chat" | "total_spending" | "category_spending" | "date_range" | "recent_expenses" | "top_categories" | "comparison",
   "category": string or null,
@@ -98,106 +215,314 @@ Return ONLY JSON:
   "endDate": string or null
 }
 
-User: "${question}"
+Question: "${question}"
 `;
-    const claudeResponse = await callModel(classificationPrompt);
 
-let classification;
+  try {
+    const raw = await callModel(prompt);
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) {
+      return fallback;
+    }
 
-try {
-  const jsonMatch = claudeResponse.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match[0]);
+    return {
+      intent: parsed.intent || fallback.intent,
+      category: parsed.category || fallback.category,
+      period: parsed.period || fallback.period,
+      limit: Number.isFinite(parsed.limit) ? parsed.limit : fallback.limit,
+      startDate: parseExplicitDate(parsed.startDate)?.toISOString() || fallback.startDate,
+      endDate: parseExplicitDate(parsed.endDate)?.toISOString() || fallback.endDate,
+    };
+  } catch (error) {
+    return fallback;
+  }
+}
 
-  if (!jsonMatch) {
-    console.log("AI RAW RESPONSE:", claudeResponse);
-    throw new Error("No JSON found in AI response");
+function buildMatch(userId, filters) {
+  const match = {
+    userId: new mongoose.Types.ObjectId(userId),
+  };
+
+  if (filters.category) {
+    match.category = filters.category;
   }
 
-  classification = JSON.parse(jsonMatch[0]);
-} catch (err) {
-  console.error("Parsing Error:", err.message);
-  throw new Error("Failed to parse AI response");
+  const startDate = parseExplicitDate(filters.startDate);
+  const endDate = parseExplicitDate(filters.endDate);
+  const periodRange = getPeriodRange(filters.period);
+  const rangeStart = startDate || periodRange.startDate || null;
+  const rangeEnd = endDate || periodRange.endDate || null;
+
+  if (rangeStart || rangeEnd) {
+    match.date = {};
+    if (rangeStart) {
+      match.date.$gte = rangeStart;
+    }
+    if (rangeEnd) {
+      match.date.$lte = rangeEnd;
+    }
+  }
+
+  return match;
 }
-    const periodRange = getPeriodRange(classification.period);
 
-    const query = {
-      userId: new mongoose.Types.ObjectId(req.user.id),
-    };
+async function getSummary(userId, filters) {
+  const match = buildMatch(userId, filters);
 
-    if (classification.category) {
-      query.category = classification.category;
-    }
+  const [summary, totals] = await Promise.all([
+    Expense.aggregate([
+      { $match: match },
+      { $group: { _id: '$category', total: { $sum: '$amount' }, count: { $sum: 1 } } },
+      { $sort: { total: -1 } },
+    ]),
+    Expense.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: null,
+          grandTotal: { $sum: '$amount' },
+          expenseCount: { $sum: 1 },
+        },
+      },
+    ]),
+  ]);
 
-    function isValidDate(d) {
-  return d instanceof Date && !isNaN(d.getTime());
+  return {
+    summaryData: summary,
+    grandTotal: totals[0]?.grandTotal || 0,
+    expenseCount: totals[0]?.expenseCount || 0,
+  };
 }
 
-const startDate = classification.startDate || periodRange.startDate;
-    const endDate = classification.endDate || periodRange.endDate;
-    if (startDate && isValidDate(new Date(startDate))) {
-      query.date = query.date || {};
-      query.date.$gte = new Date(startDate);
+async function getExpenseList(userId, filters, limit) {
+  return Expense.find(buildMatch(userId, filters))
+    .sort({ date: -1, createdAt: -1 })
+    .limit(limit)
+    .lean();
+}
+
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2,
+  }).format(amount || 0);
+}
+
+function describeRange(classification) {
+  if (classification.period && PERIOD_LABELS[classification.period]) {
+    return PERIOD_LABELS[classification.period];
+  }
+
+  if (classification.startDate || classification.endDate) {
+    const parts = [];
+    if (classification.startDate) {
+      parts.push(`from ${new Date(classification.startDate).toLocaleDateString('en-IN')}`);
     }
-    if (endDate && isValidDate(new Date(endDate))) {
-      query.date = query.date || {};
-      query.date.$lte = new Date(endDate);
+    if (classification.endDate) {
+      parts.push(`to ${new Date(classification.endDate).toLocaleDateString('en-IN')}`);
+    }
+    return parts.join(' ');
+  }
+
+  return 'the selected period';
+}
+
+function buildDeterministicAnswer(question, classification, metrics, comparisonData) {
+  if (classification.intent === 'chat') {
+    return 'I can summarize your spending, list recent expenses, compare periods, and break down categories. Try asking about this month, last month, food spending, or your top categories.';
+  }
+
+  if (metrics.expenseCount === 0) {
+    return `I couldn't find any expenses for ${describeRange(classification)}. Add a few transactions first, then ask again.`;
+  }
+
+  if (classification.intent === 'comparison' && comparisonData) {
+    const direction =
+      comparisonData.percentChange === 0
+        ? 'stayed flat'
+        : comparisonData.percentChange > 0
+          ? 'increased'
+          : 'decreased';
+    return `Your spending ${direction} by ${Math.abs(comparisonData.percentChange).toFixed(1)}%: ${formatCurrency(comparisonData.currentTotal)} in ${comparisonData.currentLabel} versus ${formatCurrency(comparisonData.previousTotal)} in ${comparisonData.previousLabel}.`;
+  }
+
+  if (classification.intent === 'top_categories') {
+    const top = metrics.summaryData.slice(0, 3);
+    const summary = top
+      .map((item) => `${item._id} ${formatCurrency(item.total)}`)
+      .join(', ');
+    return `Your top spending categories for ${describeRange(classification)} are ${summary}. Total spending was ${formatCurrency(metrics.grandTotal)} across ${metrics.expenseCount} expenses.`;
+  }
+
+  if (classification.intent === 'recent_expenses' || classification.intent === 'date_range') {
+    const recent = metrics.expenseData
+      .slice(0, 3)
+      .map((expense) => `${formatCurrency(expense.amount)} on ${expense.category}`)
+      .join(', ');
+    return `I found ${metrics.expenseCount} expenses for ${describeRange(classification)} totaling ${formatCurrency(metrics.grandTotal)}. Recent entries include ${recent}.`;
+  }
+
+  if (classification.intent === 'category_spending' && classification.category) {
+    return `You spent ${formatCurrency(metrics.grandTotal)} on ${classification.category} in ${describeRange(classification)} across ${metrics.expenseCount} expenses.`;
+  }
+
+  return `Your total spending for ${describeRange(classification)} is ${formatCurrency(metrics.grandTotal)} across ${metrics.expenseCount} expenses.`;
+}
+
+async function buildAnswer(question, classification, metrics, comparisonData) {
+  const fallback = buildDeterministicAnswer(question, classification, metrics, comparisonData);
+  if (!process.env.OPENROUTER_API_KEY) {
+    return fallback;
+  }
+
+  const prompt = `
+You are a concise, helpful expense tracker assistant.
+Answer the user naturally and accurately. Do not invent numbers.
+
+Question: "${question}"
+Intent: ${classification.intent}
+Category: ${classification.category || 'none'}
+Period label: ${describeRange(classification)}
+Grand total: ${metrics.grandTotal}
+Expense count: ${metrics.expenseCount}
+Top categories: ${metrics.summaryData
+    .slice(0, 5)
+    .map((item) => `${item._id}=${item.total}`)
+    .join(', ') || 'none'}
+Recent expenses: ${metrics.expenseData
+    .slice(0, 5)
+    .map((expense) => `${expense.amount} ${expense.category} ${expense.description || ''}`.trim())
+    .join('; ') || 'none'}
+Comparison: ${
+    comparisonData
+      ? `${comparisonData.currentTotal} current, ${comparisonData.previousTotal} previous, ${comparisonData.percentChange}% change`
+      : 'none'
+  }
+
+If there is no data, say so clearly.
+`;
+
+  try {
+    const answer = await callModel(prompt);
+    return answer.trim() || fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
+
+router.post('/query', async (req, res) => {
+  try {
+    const question = String(req.body.question || '').trim();
+    if (!question) {
+      return res.status(400).json({ success: false, error: 'Question is required' });
     }
 
-    const expenses = await Expense.find(query)
-      .sort({ date: -1, createdAt: -1 })
-      .limit(classification.limit || 10);
+    await dbConnect();
 
-    const grandTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const classification = await classifyQuestion(question);
+    const limit = Math.min(Math.max(Number(classification.limit) || 5, 1), 50);
 
-    const summaryData = Object.entries(
-      expenses.reduce((acc, exp) => {
-        if (!acc[exp.category]) acc[exp.category] = { total: 0, count: 0 };
-        acc[exp.category].total += exp.amount;
-        acc[exp.category].count += 1;
-        return acc;
-      }, {})
-    ).map(([category, { total, count }]) => ({ _id: category, total, count }))
-      .sort((a, b) => b.total - a.total);
+    if (classification.intent === 'chat') {
+      const answer = await buildAnswer(question, classification, {
+        grandTotal: 0,
+        expenseCount: 0,
+        summaryData: [],
+        expenseData: [],
+      });
 
-    const topCategories = summaryData.slice(0, 3);
-    const periodLabels = {
-      current_month: 'this month',
-      last_month: 'last month',
-      last_week: 'this week',
-      last_3_months: 'last 3 months',
-    };
-    const periodLabel = periodLabels[classification.period] || null;
+      return res.json({
+        success: true,
+        data: {
+          answer,
+          query: classification,
+          expenseData: [],
+          grandTotal: 0,
+          summaryData: [],
+          topCategories: [],
+          expenseCount: 0,
+          periodLabel: null,
+        },
+      });
+    }
 
-    const responsePrompt = `You are a friendly expense tracker assistant. The user asked: "${question}"
+    const [metrics, expenseData] = await Promise.all([
+      getSummary(req.user.id, classification),
+      getExpenseList(req.user.id, classification, limit),
+    ]);
 
-Based on their expense data:
-- Total: INR ${grandTotal.toFixed(2)}
-- Number of expenses: ${expenses.length}
-- Expenses: ${expenses.map((expense) => `${expense.amount} on ${expense.category}${expense.description ? ': ' + expense.description : ''} (${new Date(expense.date).toLocaleDateString()})`).join('; ')}
+    const topCategories = metrics.summaryData.slice(0, 3);
+    let comparisonData = null;
 
-Provide a clear, friendly answer. If there are no expenses, say so.`;
+    if (classification.intent === 'comparison') {
+      const { currentRange, previousRange } = getComparisonRange(classification.period);
+      const [currentMetrics, previousMetrics] = await Promise.all([
+        getSummary(req.user.id, {
+          ...classification,
+          startDate: currentRange.startDate?.toISOString() || null,
+          endDate: currentRange.endDate?.toISOString() || null,
+        }),
+        getSummary(req.user.id, {
+          ...classification,
+          startDate: previousRange.startDate?.toISOString() || null,
+          endDate: previousRange.endDate?.toISOString() || null,
+        }),
+      ]);
 
-    const answerResponse = await callModel(responsePrompt);
+      const currentTotal = currentMetrics.grandTotal;
+      const previousTotal = previousMetrics.grandTotal;
+      const percentChange =
+        previousTotal === 0
+          ? currentTotal === 0
+            ? 0
+            : 100
+          : ((currentTotal - previousTotal) / previousTotal) * 100;
 
-    res.json({
+      comparisonData = {
+        currentTotal,
+        previousTotal,
+        percentChange,
+        currentLabel: PERIOD_LABELS[classification.period] || 'current period',
+        previousLabel:
+          classification.period === 'last_month'
+            ? 'the month before'
+            : classification.period === 'last_week'
+              ? 'the previous 7 days'
+              : classification.period === 'last_3_months'
+                ? 'the 3 months before that'
+                : 'the previous month',
+      };
+    }
+
+    const answer = await buildAnswer(
+      question,
+      classification,
+      {
+        ...metrics,
+        expenseData,
+      },
+      comparisonData
+    );
+
+    return res.json({
       success: true,
       data: {
-        answer: answerResponse.trim(),
-        query: {
-          intent: classification.intent,
-          category: classification.category,
-          period: classification.period,
-        },
-        expenseData: expenses,
-        grandTotal,
-        summaryData,
+        answer,
+        query: classification,
+        expenseData,
+        grandTotal: metrics.grandTotal,
+        summaryData: metrics.summaryData,
         topCategories,
-        periodLabel,
+        expenseCount: metrics.expenseCount,
+        periodLabel: classification.period ? PERIOD_LABELS[classification.period] || null : null,
+        ...(comparisonData || {}),
       },
     });
   } catch (error) {
-  console.error("FULL ERROR:", error); // 👈 VERY IMPORTANT
-  res.status(500).json({ success: false, error: error.message });
-}
+    console.error('AI route failed:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 module.exports = router;

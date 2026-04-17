@@ -102,8 +102,11 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={value}>
       {showLoadingState ? (
-        <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', color: 'var(--text-muted)' }}>
-          Loading...
+        <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', color: 'var(--muted)' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem' }}>Expense Tracker</div>
+            <div style={{ marginTop: '0.35rem' }}>Loading your workspace...</div>
+          </div>
         </div>
       ) : children}
     </AuthContext.Provider>

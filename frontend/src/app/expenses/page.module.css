@@ -1,142 +1,190 @@
-.container {
-  padding: 1.5rem;
-  max-width: 900px;
-  margin: 0 auto;
+.page {
+  display: grid;
+  gap: 1rem;
 }
 
-.header {
+.hero,
+.metric,
+.formPanel,
+.groupCard,
+.empty,
+.state,
+.error {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.hero {
+  border-radius: var(--radius-lg);
+  padding: 1.4rem;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.25rem;
   gap: 1rem;
   flex-wrap: wrap;
 }
 
-.pageTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.01em;
+.eyebrow {
+  display: inline-flex;
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.count {
-  color: var(--text-muted);
-  font-size: 0.84rem;
-  margin-top: 0.1rem;
+.title {
+  margin-top: 0.8rem;
+  font-size: clamp(1.9rem, 3.6vw, 3.1rem);
+  max-width: 14ch;
+  line-height: 0.98;
+}
+
+.subtitle {
+  margin-top: 0.8rem;
+  max-width: 48rem;
+  color: var(--ink-soft);
 }
 
 .controls {
   display: flex;
+  gap: 0.7rem;
   align-items: center;
-  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .addBtn {
-  padding: 0.45rem 1rem;
-  background: var(--gradient);
-  color: white;
+  min-height: 46px;
+  padding: 0.8rem 1.1rem;
   border: none;
-  border-radius: var(--radius-sm);
-  font-size: 0.82rem;
-  font-weight: 600;
-  transition: opacity 0.15s;
-  white-space: nowrap;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+  color: #fff;
+  font-weight: 700;
 }
 
-.addBtn:hover {
-  opacity: 0.9;
-}
-
-.formWrapper {
-  margin-bottom: 1.25rem;
-  max-width: 420px;
-}
-
-.loading,
-.empty {
-  text-align: center;
-  padding: 3rem;
-  color: var(--text-muted);
-}
-
-.dateGroups {
-  display: flex;
-  flex-direction: column;
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
-.dateGroup {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.15rem;
-  box-shadow: var(--shadow);
+.metric {
+  border-radius: var(--radius-md);
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.2rem;
 }
 
-.dateHeader {
+.metricLabel {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.metricValue {
+  font-size: 1.35rem;
+}
+
+.formPanel,
+.groupCard,
+.empty,
+.state,
+.error {
+  border-radius: var(--radius-lg);
+  padding: 1.2rem;
+}
+
+.formHeader {
+  margin-bottom: 0.85rem;
+}
+
+.formTitle {
+  margin-top: 0.5rem;
+  font-size: 1.35rem;
+}
+
+.state,
+.empty {
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty h2 {
+  font-size: 1.45rem;
+  margin-bottom: 0.35rem;
+}
+
+.error {
+  border-color: rgba(220, 38, 38, 0.15);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.groups {
+  display: grid;
+  gap: 1rem;
+}
+
+.groupHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.85rem;
-  padding-bottom: 0.65rem;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.9rem;
   border-bottom: 1px solid var(--border);
 }
 
-.dateLabel {
-  font-weight: 600;
-  font-size: 0.86rem;
-  color: var(--text);
+.groupTitle {
+  font-size: 1.2rem;
 }
 
-.dateCount {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  background: var(--bg-accent);
-  padding: 0.15rem 0.5rem;
-  border-radius: 20px;
+.groupMeta {
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.groupTotal {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+
+@media (max-width: 860px) {
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    max-width: none;
+  }
 }
 
 @media (max-width: 640px) {
-  .container {
-    padding: 0.75rem;
+  .hero,
+  .metric,
+  .formPanel,
+  .groupCard,
+  .empty,
+  .state,
+  .error {
+    border-radius: var(--radius-md);
+    padding: 1rem;
   }
 
-  .header {
-    margin-bottom: 1rem;
-  }
-
-  .pageTitle {
-    font-size: 1.1rem;
-  }
-
-  .count {
-    font-size: 0.78rem;
-  }
-
-  .controls {
-    gap: 0.4rem;
-  }
-
+  .controls,
   .addBtn {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.78rem;
+    width: 100%;
   }
 
-  .formWrapper {
-    max-width: 100%;
-  }
-
-  .dateGroup {
-    padding: 0.85rem;
-  }
-
-  .dateHeader {
-    margin-bottom: 0.65rem;
-    padding-bottom: 0.5rem;
-  }
-
-  .dateLabel {
-    font-size: 0.8rem;
+  .groupHeader {
+    flex-direction: column;
   }
 }
