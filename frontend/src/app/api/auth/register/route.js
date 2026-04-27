@@ -1,5 +1,3 @@
-import { NextResponse } from 'next';
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://expense-tracker-server.onrender.com';
 
 export async function POST(request) {
@@ -10,9 +8,17 @@ export async function POST(request) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch {
-    return NextResponse.json({ success: false, error: 'Backend unreachable' }, { status: 503 });
+
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { success: false, error: text || `HTTP ${response.status}` };
+    }
+
+    return Response.json(data, { status: response.status });
+  } catch (error) {
+    return Response.json({ success: false, error: 'Backend unreachable' }, { status: 503 });
   }
 }
