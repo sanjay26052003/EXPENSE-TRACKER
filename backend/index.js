@@ -9,14 +9,16 @@ const authRoutes = require('./routes/authRoutes');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Middleware
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
 }));
+
 app.use(express.json());
 
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/ai', aiRoutes);
@@ -25,12 +27,16 @@ app.get('/', (req, res) => {
   res.json({ message: 'Expense Tracker API is running' });
 });
 
+// Start Server AFTER DB connects
 async function startServer() {
   try {
     await dbConnect();
+
+    // ✅ ONLY ONE app.listen
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`Server running on port ${PORT}`);
     });
+
   } catch (error) {
     console.error('DB Connection Error:', error.message);
     process.exit(1);
